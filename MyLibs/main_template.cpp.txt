@@ -1,0 +1,32 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#pragma fullpath_file  off 
+
+/* Scheduler includes. */
+#include "FreeRTOS.h"
+
+#include "task.h"
+
+#include "main.hpp"
+
+
+    void * operator new(size_t size) { 
+      return (pvPortMalloc(size)); 
+    }
+    void operator delete(void* wsk) {
+      vPortFree(wsk) ;
+    }
+     void* operator new[](size_t size) {
+      return (pvPortMalloc(size));
+    }
+    void operator delete[](void* ptr) {
+      vPortFree(ptr);
+    }
+
+
+
+
+
+
+    static void prvSetupHeap( void );
