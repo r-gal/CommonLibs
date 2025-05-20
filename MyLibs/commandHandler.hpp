@@ -8,6 +8,7 @@
 
 #endif
 class TelnetClientProcess_c;
+class UartTerminalProcess_c;
 #define PRINT_BUFFER_SIZE 1024
 
 class Command_c;
@@ -71,6 +72,10 @@ class CommandHandler_c : public SignalLayer_c
   #if COMMAND_USE_TELNET == 1
   TelnetClientProcess_c* telnetHandler;
   #endif
+  #if COMMAND_USE_UART == 1
+  UartTerminalProcess_c* uartHandler;
+  #endif
+  
 
   void PrintBuf(char* buffer);
   void PrintBuf(const char* buffer);
@@ -82,7 +87,14 @@ class CommandHandler_c : public SignalLayer_c
   void ParseCommand(void);
 
   CommandHandler_c(char* buffer_, uint16_t size_) : buffer(buffer_), size(size_)
-  {}
+  {
+    #if COMMAND_USE_TELNET == 1
+    telnetHandler = nullptr;
+    #endif
+    #if COMMAND_USE_UART == 1
+    uartHandler = nullptr;
+    #endif
+  }
 
   //static const 
   //static void SetRestartRime(void);

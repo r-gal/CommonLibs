@@ -29,6 +29,10 @@
 
   #endif
 
+  #if COMMAND_USE_UART == 1
+    #include "UartTerminal.hpp"
+  #endif
+
 Command_c* Command_c::first = nullptr;
 
 const char* errorCodeString[] = 
@@ -286,16 +290,31 @@ void CommandHandler_c::PrintBuf(const char* buffer)
 void CommandHandler_c::SendBuffer(char* buffer)
 {
   #if COMMAND_USE_TELNET == 1
-    telnetHandler->Send((uint8_t*)buffer, strlen(buffer));
-
+    if(telnetHandler != nullptr)
+    {
+      telnetHandler->Send((uint8_t*)buffer, strlen(buffer));
+    }
   #endif
+
+  #if COMMAND_USE_UART == 1
+    if(uartHandler != nullptr)
+    {
+      uartHandler->SendBuffer((uint8_t*)buffer, strlen(buffer));
+    }
+    delete[] buffer;
+  #endif
+
+
 }
 
 void CommandHandler_c::SendToAll(char* buffer)
 {
  #if COMMAND_USE_TELNET == 1
-    TelnetProcess_c::SendToAllClients((uint8_t*)buffer, strlen(buffer));
-    
+    TelnetProcess_c::SendToAllClients((uint8_t*)buffer, strlen(buffer));    
+  #endif
+
+  #if COMMAND_USE_UART == 1
+    UartTerminalProcess_c::SendToAll((uint8_t*)buffer, strlen(buffer));    
   #endif
 }
 

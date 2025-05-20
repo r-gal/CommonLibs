@@ -8,9 +8,9 @@
 
 
 #include "TimeClass.hpp"
-//#include "ff_time.h"
 
-RTC_HandleTypeDef TimeUnit_c::hrtc;
+
+RTC_HandleTypeDef hrtc;
 
 SystemTime_st TimeUnit_c::restartTime;
 
@@ -31,8 +31,8 @@ bool TimeUnit_c::GetSystemTime(SystemTime_st* time  )
 {
   RTC_TimeTypeDef rtcTime;
   RTC_DateTypeDef rtcDate;
-  HAL_RTC_GetTime(TimeUnit_c::GetHrtc(), &rtcTime, RTC_FORMAT_BIN);
-  HAL_RTC_GetDate(TimeUnit_c::GetHrtc(), &rtcDate, RTC_FORMAT_BIN);
+  HAL_RTC_GetTime(&hrtc, &rtcTime, RTC_FORMAT_BIN);
+  HAL_RTC_GetDate(&hrtc, &rtcDate, RTC_FORMAT_BIN);
 
   time->Hour = ( uint16_t ) rtcTime.Hours;
   time->Minute = ( uint16_t ) rtcTime.Minutes;
@@ -42,10 +42,11 @@ bool TimeUnit_c::GetSystemTime(SystemTime_st* time  )
   time->Year = ( uint16_t ) rtcDate.Year + 2000;
   time->WeekDay =  ( uint16_t ) rtcDate.WeekDay;
   time->SubSeconds = rtcTime.SubSeconds;
-  #ifdef STM32H725xx
-  uint32_t flag = (GetHrtc())->Instance->CR & RTC_CR_BKP;
-  #else 
-  uint32_t flag = HAL_RTC_DST_ReadStoreOperation(GetHrtc());
+  #ifdef STM32H7
+  uint32_t flag = (hrtc.Instance->CR & RTC_CR_BKP;
+  #endif
+  #ifdef STM32F4
+  uint32_t flag = HAL_RTC_DST_ReadStoreOperation(&hrtc);
   #endif
   if(flag == 0)
   {
@@ -62,7 +63,7 @@ bool TimeUnit_c::GetSystemTime(SystemTime_st* time  )
 bool TimeUnit_c::GetSystemTime(TimeLight_st* time  )
 {
   RTC_TimeTypeDef rtcTime;
-   HAL_RTC_GetTime(TimeUnit_c::GetHrtc(), &rtcTime, RTC_FORMAT_BIN);
+   HAL_RTC_GetTime(&hrtc, &rtcTime, RTC_FORMAT_BIN);
   time->hour = ( uint16_t ) rtcTime.Hours;
   time->minute = ( uint16_t ) rtcTime.Minutes;
   time->second = ( uint16_t ) rtcTime.Seconds;
@@ -89,8 +90,8 @@ bool TimeUnit_c::SetTime( SystemTime_st * pxTime )
 
   //HAL_PWR_EnableBkUpAccess();
 
-  HAL_RTC_SetTime(TimeUnit_c::GetHrtc(), &rtcTime, RTC_FORMAT_BIN);
-  HAL_RTC_SetDate(TimeUnit_c::GetHrtc(), &rtcDate, RTC_FORMAT_BIN);
+  HAL_RTC_SetTime(&hrtc, &rtcTime, RTC_FORMAT_BIN);
+  HAL_RTC_SetDate(&hrtc, &rtcDate, RTC_FORMAT_BIN);
 
   //HAL_PWR_DisableBkUpAccess();
 
@@ -110,64 +111,42 @@ bool TimeUnit_c::SetSystemTime( SystemTime_st * pxTime )
 
   if(summerTime)
   {
-    #ifdef STM32H725xx
-    __HAL_RTC_WRITEPROTECTION_DISABLE(GetHrtc());                  
-    MODIFY_REG((GetHrtc())->Instance->CR, RTC_CR_BKP , RTC_STOREOPERATION_SET); 
-    __HAL_RTC_WRITEPROTECTION_ENABLE(GetHrtc());    
-    #else
-    HAL_RTC_DST_SetStoreOperation(GetHrtc());
+    #ifdef STM32H7
+    __HAL_RTC_WRITEPROTECTION_DISABLE(&hrtc);                  
+    MODIFY_REG(&hrtc)->Instance->CR, RTC_CR_BKP , RTC_STOREOPERATION_SET); 
+    __HAL_RTC_WRITEPROTECTION_ENABLE(&hrtc);    
+    #endif
+    #ifdef STM32F4
+    HAL_RTC_DST_SetStoreOperation(&hrtc);
     #endif
   }
   else
   {
-    #ifdef STM32H725xx
-    __HAL_RTC_WRITEPROTECTION_DISABLE(GetHrtc());                  
-    MODIFY_REG((GetHrtc())->Instance->CR, RTC_CR_BKP , RTC_STOREOPERATION_RESET); 
-    __HAL_RTC_WRITEPROTECTION_ENABLE(GetHrtc());    
-    #else
-    HAL_RTC_DST_ClearStoreOperation(GetHrtc());
+    #ifdef STM32H7
+    __HAL_RTC_WRITEPROTECTION_DISABLE(&hrtc);                  
+    MODIFY_REG(&hrtc)->Instance->CR, RTC_CR_BKP , RTC_STOREOPERATION_RESET); 
+    __HAL_RTC_WRITEPROTECTION_ENABLE(&hrtc);    
+    #endif
+    #ifdef STM32F4
+    HAL_RTC_DST_ClearStoreOperation(&hrtc);
     #endif
   }
 
   return true;
-} /* FF_SetSystemTime() */
-
-
-/*
-time_t FreeRTOS_time( time_t * pxTime )
-{
-  RTC_TimeTypeDef rtcTime;
-  RTC_DateTypeDef rtcDate;
-  HAL_RTC_GetTime(TimeUnit_c::GetHrtc(), &rtcTime, RTC_FORMAT_BIN);
-  HAL_RTC_GetDate(TimeUnit_c::GetHrtc(), &rtcDate, RTC_FORMAT_BIN);
-
-  FF_TimeStruct_t timeStruct;
-
-  timeStruct.tm_hour = ( uint16_t ) rtcTime.Hours;
-  timeStruct.tm_min = ( uint16_t ) rtcTime.Minutes;
-  timeStruct.tm_sec = ( uint16_t ) rtcTime.Seconds;
-  timeStruct.tm_mday = ( uint16_t ) rtcDate.Date - 1;
-  timeStruct.tm_mon = ( uint16_t ) rtcDate.Month;
-  timeStruct.tm_year = ( uint16_t ) rtcDate.Year;
-
-  time_t retTime = FreeRTOS_mktime(&timeStruct);
-
-  if(pxTime != nullptr)
-  {
-    *pxTime = retTime;
-  }
-
-  return retTime;
-}
-*/
+} 
 
 
 void TimeUnit_c::Init()
 {
-  #ifdef STM32H725xx
 
+  RTC_TimeTypeDef sTime = {0};
+  RTC_DateTypeDef sDate = {0};
+  RTC_AlarmTypeDef sAlarm = {0};
+
+  #ifdef STM32H7
   __HAL_RCC_RTC_CLK_ENABLE();
-  #else
+  #endif
+  #ifdef STM32F4
   __HAL_RCC_PWR_CLK_ENABLE();
   #endif
   HAL_PWR_EnableBkUpAccess();
@@ -179,30 +158,46 @@ void TimeUnit_c::Init()
   hrtc.Init.SynchPrediv = 256-1;
   if (READ_BIT(hrtc.Instance->ISR, RTC_ISR_INITS) == 0U)
   {
-    //HAL_PWR_EnableBkUpAccess();
+    #ifdef STM32F4
+    HAL_PWR_EnableBkUpAccess();
+    #endif
     HAL_RTC_Init(&hrtc);
-    //HAL_PWR_DisableBkUpAccess(); 
-  }
 
-  RTC_AlarmTypeDef sAlarm;
-  memset(&sAlarm,0,sizeof(RTC_AlarmTypeDef));
+
+    /* USER CODE BEGIN Check_RTC_BKUP */
+
+    /* USER CODE END Check_RTC_BKUP */
+
+    /** Initialize RTC and set the Time and Date
+    */
+    sTime.Hours = 0x0;
+    sTime.Minutes = 0x0;
+    sTime.Seconds = 0x0;
+    sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+    sTime.StoreOperation = RTC_STOREOPERATION_RESET;
+    if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
+    {
+      Error_Handler();
+    }
+    sDate.WeekDay = RTC_WEEKDAY_WEDNESDAY;
+    sDate.Month = RTC_MONTH_JANUARY;
+    sDate.Date = 0x1;
+    sDate.Year = 0x25;
+
+    if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    #ifdef STM32F4
+    HAL_PWR_DisableBkUpAccess(); 
+    #endif
+  }
 
   sAlarm.Alarm = RTC_ALARM_A;
   sAlarm.AlarmMask  =RTC_ALARMMASK_ALL;
   sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_NONE;
   sAlarm.AlarmTime.SubSeconds = 100;
-/*
-  HAL_RTC_DeactivateAlarm(&hrtc,RTC_ALARM_A);
-  
-  HAL_RTC_DeactivateAlarm(&hrtc,RTC_ALARM_B);
-
-  HAL_RTCEx_DeactivateTimeStamp(&hrtc);
-  HAL_RTCEx_DeactivateTamper(&hrtc,RTC_TAMPER_1);
-  HAL_RTCEx_DeactivateTamper(&hrtc,RTC_TAMPER_2);
-  HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
-  HAL_RTCEx_DeactivateCalibrationOutPut(&hrtc);
-  HAL_RTCEx_DeactivateRefClock(&hrtc);
-*/
 
   EXTI_HandleTypeDef hexti;
   hexti.Line = EXTI_LINE_17;
@@ -218,6 +213,9 @@ void TimeUnit_c::Init()
   HAL_EXTI_SetConfigLine(&hexti, &pExtiConfig);
 
   HAL_RTC_SetAlarm_IT(&hrtc,&sAlarm,RTC_FORMAT_BCD);
+
+
+  
 
 
 
@@ -414,21 +412,23 @@ void TimeUnit_c::SetUtcTime(uint32_t sec,uint32_t subSec)
 
   if(summerTime)
   {
-    #ifdef STM32H725xx
-    __HAL_RTC_DAYLIGHT_SAVING_TIME_ADD1H(GetHrtc(),RTC_STOREOPERATION_SET);
-    #else
-    HAL_RTC_DST_SetStoreOperation(GetHrtc());
-    HAL_RTC_DST_Add1Hour(GetHrtc());
+    #ifdef STM32H7
+    __HAL_RTC_DAYLIGHT_SAVING_TIME_ADD1H(&hrtc,RTC_STOREOPERATION_SET);
+    #endif
+    #ifdef STM32F4
+    HAL_RTC_DST_SetStoreOperation(&hrtc);
+    HAL_RTC_DST_Add1Hour(&hrtc);
     #endif
   }
   else
   {
-    #ifdef STM32H725xx
-    __HAL_RTC_WRITEPROTECTION_DISABLE(GetHrtc());                  
-    MODIFY_REG((GetHrtc())->Instance->CR, RTC_CR_BKP , RTC_STOREOPERATION_RESET); 
-    __HAL_RTC_WRITEPROTECTION_ENABLE(GetHrtc());    
-    #else
-    HAL_RTC_DST_ClearStoreOperation(GetHrtc());
+    #ifdef STM32H7
+    __HAL_RTC_WRITEPROTECTION_DISABLE(&hrtc);                  
+    MODIFY_REG((&hrtc)->Instance->CR, RTC_CR_BKP , RTC_STOREOPERATION_RESET); 
+    __HAL_RTC_WRITEPROTECTION_ENABLE(&hrtc);    
+    #endif
+    #ifdef STM32F4
+    HAL_RTC_DST_ClearStoreOperation(&hrtc);
     #endif
   }
 
@@ -451,10 +451,11 @@ void TimeUnit_c::ShiftTime(bool diffSign, uint8_t shiftVal)
 
 void TimeUnit_c::SummerTimeCheck(SystemTime_st* timeStruct)
 {
-  #ifdef STM32H725xx
-  uint32_t dstFlag = (GetHrtc())->Instance->CR & RTC_CR_BKP;
-  #else 
-  uint32_t dstFlag = HAL_RTC_DST_ReadStoreOperation(GetHrtc());
+  #ifdef STM32H7
+  uint32_t dstFlag = (&hrtc)->Instance->CR & RTC_CR_BKP;
+  #endif
+  #ifdef STM32F4
+  uint32_t dstFlag = HAL_RTC_DST_ReadStoreOperation(&hrtc);
   #endif
   
 
@@ -463,30 +464,33 @@ void TimeUnit_c::SummerTimeCheck(SystemTime_st* timeStruct)
   
   if(( wantedDST == false) && (actDST == true))
   {
-    #ifdef STM32H725xx
-    __HAL_RTC_DAYLIGHT_SAVING_TIME_SUB1H(GetHrtc(),RTC_STOREOPERATION_RESET);
-    #else
-    HAL_RTC_DST_ClearStoreOperation(GetHrtc());
-    HAL_RTC_DST_Sub1Hour(GetHrtc());
+    #ifdef STM32H7
+    __HAL_RTC_DAYLIGHT_SAVING_TIME_SUB1H(&hrtc,RTC_STOREOPERATION_RESET);
+    #endif
+    #ifdef STM32F4
+    HAL_RTC_DST_ClearStoreOperation(&hrtc);
+    HAL_RTC_DST_Sub1Hour(&hrtc);
     #endif
   }
   else if(( wantedDST == true) && (actDST == false))
   {
-    #ifdef STM32H725xx
+    #ifdef STM32H7
     __HAL_RTC_DAYLIGHT_SAVING_TIME_ADD1H(GetHrtc(),RTC_STOREOPERATION_SET);
-    #else
-    HAL_RTC_DST_SetStoreOperation(GetHrtc());
-    HAL_RTC_DST_Add1Hour(GetHrtc());
+    #endif
+    #ifdef STM32F4
+    HAL_RTC_DST_SetStoreOperation(&hrtc);
+    HAL_RTC_DST_Add1Hour(&hrtc);
     #endif
   }
 }
 
 int TimeUnit_c::GetTimeZoneOffset(void)
 {
-  #ifdef STM32H725xx
-  uint32_t dstFlag = (GetHrtc())->Instance->CR & RTC_CR_BKP;
-  #else 
-  uint32_t dstFlag = HAL_RTC_DST_ReadStoreOperation(GetHrtc());
+  #ifdef STM32H7
+  uint32_t dstFlag = (&hrtc)->Instance->CR & RTC_CR_BKP;
+  #endif
+  #ifdef STM32F4
+  uint32_t dstFlag = HAL_RTC_DST_ReadStoreOperation(&hrtc);
   #endif
   if(dstFlag == 0)
   {
@@ -589,17 +593,11 @@ TimeEvent_c::TimeEvent_c(void)
 #ifdef __cplusplus
  extern "C" {
 #endif
-void RTC_Alarm_IRQHandler( void )
-{
-  HAL_RTC_AlarmIRQHandler(TimeUnit_c::GetHrtc());
-}
 
 void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
-  //printf("RTC ALARM event \n");
   SystemTime_st timeStruct;
   TimeUnit_c::GetSystemTime(&timeStruct);
-  //printf("systime = %d\n",timeStruct.Second);
 
   if(timeStruct.Second + timeStruct.Minute == 0)
   {
@@ -615,6 +613,12 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
   }
   
 }
+
+void RTC_Alarm_IRQHandler( void )
+{
+  HAL_RTC_AlarmIRQHandler(&hrtc);
+}
+
 #ifdef __cplusplus
 }
 #endif

@@ -41,7 +41,7 @@ class TimeEvent_c
 
 class TimeUnit_c
 {
-  static RTC_HandleTypeDef hrtc;
+  
 
   static bool IsYearLeap(uint16_t year);
 
@@ -50,7 +50,6 @@ class TimeUnit_c
   static bool SetTime( SystemTime_st * pxTime );
 
   public:
-  static RTC_HandleTypeDef* GetHrtc(void) { return &hrtc; }  
 
   void Init(void);
 
@@ -83,6 +82,8 @@ class TimeUnit_c
 
 };
 
+
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -91,7 +92,6 @@ void RTC_Alarm_IRQHandler( void );
 #ifdef __cplusplus
 }
 #endif
-
 
 
 
