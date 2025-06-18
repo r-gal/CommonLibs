@@ -1,6 +1,7 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
+#include "CommonDef.hpp"
 #include "CommandConfig.hpp"
 #include "SignalList.hpp"
 //#include "stm32f4xx_rtc.h"
@@ -130,18 +131,7 @@ class Command_c
 
   public:
 
-  Command_c(void)
-  {
-    if(first != nullptr) 
-    {
-      next = first;      
-    }
-    else
-    {
-      next = nullptr;
-    }
-    first = this;
-  }
+  Command_c(void);
 
 
   Command_c* GetNext(void) { return next; }

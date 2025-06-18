@@ -20,6 +20,8 @@ IpConfig_c ipConfig;
 
 IpConfig_c* IP_c::ipConfig_p = &ipConfig;
 
+
+
 IpConfig_c::IpConfig_c(void)
 {
   
@@ -33,6 +35,8 @@ IpConfig_c::IpConfig_c(void)
 
   admConfig_p = (ipConf_st*)(&(RTC->BKP1R));
 }
+
+
 
 void IpConfig_c::InitialConfig(void)
 {
@@ -68,6 +72,8 @@ void IpConfig_c::UpdateConfig(  uint32_t ownIp_,
   #endif
 
 }
+
+#if USE_CONFIGURABLE_IP == 1
 
 void IpConfig_c::UseAdministeredConfiguration(void)
 {
@@ -136,12 +142,7 @@ void IpConfig_c::PrintIpConfig(char* buffer,ipConf_st* conf_p)
 
 }
 
-void IpConfig_c::PrintIp(char* strBuffer,uint32_t ip, char* name)
-{
-  sprintf(strBuffer,"%s%d:%d:%d:%d",name,(ip>>24)&0xFF,(ip>>16)&0xFF,(ip>>8)&0xFF,(ip)&0xFF);
 
-
-}
 
 
 /*****************command section **************************/
@@ -214,4 +215,31 @@ comResp_et Com_ipset::Handle(CommandData_st* comData)
   
   return COMRESP_OK;
 }
+#endif
+
+#else
+
+/* constant addresses */
+
+
+void IpConfig_c::UseAdministeredConfiguration(void)
+{
+  UpdateConfig(DEFAULT_IP,
+             DEFAULT_DHCP_SERVER,
+             DEFAULT_DNS_SERVER,
+             DEFAULT_SUBNET_MASK,
+             DEFAULT_GATEWAY);
+}
+
+#endif
+
+#if USE_COMMANDS == 1
+
+void IpConfig_c::PrintIp(char* strBuffer,uint32_t ip, char* name)
+{
+  sprintf(strBuffer,"%s%d:%d:%d:%d",name,(ip>>24)&0xFF,(ip>>16)&0xFF,(ip>>8)&0xFF,(ip)&0xFF);
+
+
+}
+
 #endif

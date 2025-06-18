@@ -48,8 +48,11 @@ class TimeUnit_c
   static SystemTime_st restartTime;
 
   static bool SetTime( SystemTime_st * pxTime );
+  
 
   public:
+
+  static RTC_HandleTypeDef* GetHrtc(void);
 
   void Init(void);
 

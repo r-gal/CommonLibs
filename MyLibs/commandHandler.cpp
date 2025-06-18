@@ -33,7 +33,7 @@
     #include "UartTerminal.hpp"
   #endif
 
-Command_c* Command_c::first = nullptr;
+Command_c* Command_c::first;// = nullptr;
 
 const char* errorCodeString[] = 
 {
@@ -289,20 +289,27 @@ void CommandHandler_c::PrintBuf(const char* buffer)
 
 void CommandHandler_c::SendBuffer(char* buffer)
 {
-  #if COMMAND_USE_TELNET == 1
-    if(telnetHandler != nullptr)
-    {
-      telnetHandler->Send((uint8_t*)buffer, strlen(buffer));
-    }
-  #endif
+
 
   #if COMMAND_USE_UART == 1
     if(uartHandler != nullptr)
     {
       uartHandler->SendBuffer((uint8_t*)buffer, strlen(buffer));
     }
+    
+  #endif
+
+  #if COMMAND_USE_TELNET == 1
+    if(telnetHandler != nullptr)
+    {
+      telnetHandler->Send((uint8_t*)buffer, strlen(buffer));
+    }
+  #else
+    /* tcp stack will release buffer after sending*/
     delete[] buffer;
   #endif
+
+
 
 
 }
@@ -576,6 +583,19 @@ void Command_c::Print(CommandHandler_c* commandHandler,char* buffer)
 void Command_c::Print(CommandHandler_c* commandHandler,const char* buffer)
 {
   commandHandler->PrintBuf(buffer);
+}
+
+Command_c::Command_c(void)
+{
+  if(first != nullptr) 
+  {
+    next = first;      
+  }
+  else
+  {
+    next = nullptr;
+  }
+  first = this;
 }
 
 

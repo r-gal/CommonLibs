@@ -176,11 +176,15 @@ bool Ethernet_c::InterfaceInitialise( void )
     if(result == true)
     {
       xMacInitStatus = eMACPass;
+      #if ETH_STATS == 1
       stats.cntConfigSucc++;
+      #endif
     }
     else
     {
+      #if ETH_STATS == 1
       stats.cntConfigFail++;
+      #endif
     }
     
   }
@@ -198,7 +202,9 @@ bool Ethernet_c::InterfaceInitialise( void )
           //xETH.Instance->DMAIER |= ETH_DMA_ALL_INTS;
           return true;
           //FreeRTOS_printf( ( "Link Status is high\n" ) );
+          #if ETH_STATS == 1
           stats.cntLinkUp++;
+          #endif
       }
       else
       {
@@ -224,16 +230,22 @@ void Ethernet_c::Timeout()
 
   if(linkStatus == LINK_CHANGED_UP)
   {
+    #if ETH_STATS == 1
     stats.cntLinkUp++;
+    #endif
     bool result = phy.UpdateConfig(pdFALSE);
     if(result == true)
     {
+      #if ETH_STATS == 1
       stats.cntConfigSucc++;
+      #endif
       LinkStateChanged(1);
     }
     else
     {
+      #if ETH_STATS == 1
       stats.cntConfigFail++;
+      #endif
       /* something wrong, try again after timeout */
 
     }
@@ -241,7 +253,9 @@ void Ethernet_c::Timeout()
   }
   else if(linkStatus == LINK_CHANGED_DOWN)
   {
+    #if ETH_STATS == 1
     stats.cntLinkDown++;
+    #endif
     LinkStateChanged(0);
     phy.UpdateConfig(pdFALSE);
     

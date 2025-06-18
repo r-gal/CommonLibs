@@ -4,8 +4,8 @@
 #include "SignalList.hpp"
 #include "CommonDef.hpp"
 #include "semphr.h"
-#include "UartTerminalPhy.hpp"
-#define UART_RX_BUFFER_SIZE 128
+#include "UartTerminalPhy_h7.hpp"
+#define UART_RX_BUFFER_SIZE 256
 #define UART_TX_MAX_LEN 1024
 
 #define USART_ECHO 1

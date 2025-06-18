@@ -118,9 +118,11 @@ void TcpProcess_c::main(void)
         releaseSig = false;
       }
       break;
+      #if USE_CONFIGURABLE_IP == 1
       case SIGNO_IP_CHANGED:
         arpUnit.SendRequest(IP_c::ipConfig_p->GetIp());
         break;
+      #endif
       default:
       break;
       case SIGNO_SOCKET_ADD:

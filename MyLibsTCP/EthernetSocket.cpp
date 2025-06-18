@@ -11,7 +11,7 @@
 
 #include "EthernetSocket.hpp"
 
-Socket_c* Socket_c::first = NULL;
+Socket_c* Socket_c::first = nullptr;
 
 Socket_c::Socket_c(uint16_t port,uint8_t protocol_,Socket_c* parentSocket) : port(port), protocol(protocol_), parentSocket(parentSocket)
 {
@@ -196,7 +196,6 @@ void SocketSet_c::RemoveSocket(Socket_c* socket_)
 /*****************command section **************************/
 
 #if USE_COMMANDS == 1
-
 
 CommandSocket_c commandSocket;
 

@@ -27,6 +27,11 @@ const char* weekDayStr[] = {"MON","TUE","WEN","THU","FRI","SAT","SUN","UNN"};
 
 TimeEvent_c* TimeEvent_c::first = nullptr;
 
+RTC_HandleTypeDef* TimeUnit_c::GetHrtc(void)
+{
+  return &hrtc;
+}
+
 bool TimeUnit_c::GetSystemTime(SystemTime_st* time  )
 {
   RTC_TimeTypeDef rtcTime;
@@ -43,7 +48,7 @@ bool TimeUnit_c::GetSystemTime(SystemTime_st* time  )
   time->WeekDay =  ( uint16_t ) rtcDate.WeekDay;
   time->SubSeconds = rtcTime.SubSeconds;
   #ifdef STM32H7
-  uint32_t flag = (hrtc.Instance->CR & RTC_CR_BKP;
+  uint32_t flag = (hrtc.Instance->CR & RTC_CR_BKP);
   #endif
   #ifdef STM32F4
   uint32_t flag = HAL_RTC_DST_ReadStoreOperation(&hrtc);
@@ -113,7 +118,7 @@ bool TimeUnit_c::SetSystemTime( SystemTime_st * pxTime )
   {
     #ifdef STM32H7
     __HAL_RTC_WRITEPROTECTION_DISABLE(&hrtc);                  
-    MODIFY_REG(&hrtc)->Instance->CR, RTC_CR_BKP , RTC_STOREOPERATION_SET); 
+    MODIFY_REG(hrtc.Instance->CR, RTC_CR_BKP , RTC_STOREOPERATION_SET); 
     __HAL_RTC_WRITEPROTECTION_ENABLE(&hrtc);    
     #endif
     #ifdef STM32F4
@@ -124,7 +129,7 @@ bool TimeUnit_c::SetSystemTime( SystemTime_st * pxTime )
   {
     #ifdef STM32H7
     __HAL_RTC_WRITEPROTECTION_DISABLE(&hrtc);                  
-    MODIFY_REG(&hrtc)->Instance->CR, RTC_CR_BKP , RTC_STOREOPERATION_RESET); 
+    MODIFY_REG(hrtc.Instance->CR, RTC_CR_BKP , RTC_STOREOPERATION_RESET); 
     __HAL_RTC_WRITEPROTECTION_ENABLE(&hrtc);    
     #endif
     #ifdef STM32F4
@@ -475,7 +480,7 @@ void TimeUnit_c::SummerTimeCheck(SystemTime_st* timeStruct)
   else if(( wantedDST == true) && (actDST == false))
   {
     #ifdef STM32H7
-    __HAL_RTC_DAYLIGHT_SAVING_TIME_ADD1H(GetHrtc(),RTC_STOREOPERATION_SET);
+    __HAL_RTC_DAYLIGHT_SAVING_TIME_ADD1H(&hrtc,RTC_STOREOPERATION_SET);
     #endif
     #ifdef STM32F4
     HAL_RTC_DST_SetStoreOperation(&hrtc);

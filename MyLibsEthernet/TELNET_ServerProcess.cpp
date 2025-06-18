@@ -244,6 +244,8 @@ void TelnetClientProcess_c::Close(void)
   socket->Close();
   //serverProcess->DeleteClient(idx);
   delete this;
+  #if USE_FILESYSTEM == 1
   FileSystem_c::CleanTask();
+  #endif
   vTaskDelete(NULL);
 }

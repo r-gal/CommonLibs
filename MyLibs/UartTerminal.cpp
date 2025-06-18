@@ -37,31 +37,44 @@ void UartTerminalProcess_c::main(void)
 
     if(rxPtr >= UART_RX_BUFFER_SIZE) { rxPtr = 0; }
 
-    HAL_UARTEx_ReceiveToIdle_DMA(huart_p,rxBuffer + rxPtr,UART_RX_BUFFER_SIZE - rxPtr);
+    HAL_StatusTypeDef status = HAL_UARTEx_ReceiveToIdle_DMA(huart_p,rxBuffer + rxPtr,UART_RX_BUFFER_SIZE - rxPtr);
 
-    ulTaskNotifyTake(pdTRUE,portMAX_DELAY );
+    if(status == HAL_OK)
+    {
+  
 
-    rxBuffer[rxPtr + rxSize] = 0;
+      ulTaskNotifyTake(pdTRUE,portMAX_DELAY );
 
-    #if USART_ECHO == 1
-      SendBuffer(rxBuffer + rxPtr,rxSize);
+      rxBuffer[rxPtr + rxSize] = 0;
+
+      #if USART_ECHO == 1
+        SendBuffer(rxBuffer + rxPtr,rxSize);
 
 
-    #endif
+      #endif
 
-    rxPtr += rxSize;
+      rxPtr += rxSize;
 
-    if(rxBuffer[rxPtr - 1] == '\r')
-    {  
-      rxPtr--;
-      char str[16] = "\nHandle:\n";
-      SendBuffer((uint8_t*)str,strlen(str));
-      SendBuffer(rxBuffer,rxPtr);
-      CommandHandler_c handler((char*)rxBuffer,rxPtr);
-      handler.uartHandler = this;
-      handler.ParseCommand();
 
-      rxPtr = 0;
+      if(rxBuffer[rxPtr - 1] == '\r')
+      {  
+        rxPtr--;
+
+        char* str = new char[16];
+        strcpy(str,"\nHandle:\n");
+        SendBuffer((uint8_t*)str,strlen(str));
+        delete[] str;
+        SendBuffer(rxBuffer,rxPtr);
+        CommandHandler_c handler((char*)rxBuffer,rxPtr);
+        handler.uartHandler = this;
+        handler.ParseCommand();
+
+        rxPtr = 0;
+      }
+    }
+    else
+    {
+      printf("uart rx error\n");
     }
   }
 }
@@ -84,9 +97,18 @@ void UartTerminalProcess_c::SendBuffer(uint8_t* buf, uint16_t size)
 
   txTaskHandle = xTaskGetCurrentTaskHandle();
 
-  HAL_UART_Transmit_DMA(huart_p,buf,size);
+  HAL_StatusTypeDef status = HAL_UART_Transmit_DMA(huart_p,buf,size);
 
-  ulTaskNotifyTake(pdTRUE,portMAX_DELAY );
+  if(status == HAL_OK)
+  {
+
+    ulTaskNotifyTake(pdTRUE,portMAX_DELAY );
+  }
+  else
+  {
+    printf("uart tx error\n");
+  }
+
 
   xSemaphoreGive(usartTxSemaphore);  
 
@@ -113,6 +135,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
   TaskHandle_t uartTaskHandle = uartTask->rxTaskHandle;
   uartTask->rxSize = Size;
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  printf("received %d bytes\n",Size);
   xTaskNotifyFromISR( uartTaskHandle, 1, eSetBits, &( xHigherPriorityTaskWoken ) );
   portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 
